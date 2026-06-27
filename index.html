@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
@@ -53,11 +53,15 @@
       width: 520px; height: 520px;
       background: var(--accent);
       top: -140px; left: -160px;
+      /* Анимация плавного перелива цвета: салатовый → бирюзовый → салатовый */
+      animation: gradientShiftA 8s ease-in-out infinite;
     }
     body::after {
       width: 420px; height: 420px;
       background: var(--accent2);
       bottom: 80px; right: -140px;
+      /* Зеркальная анимация со сдвигом по фазе, чтобы круги переливались навстречу друг другу */
+      animation: gradientShiftB 8s ease-in-out infinite;
     }
 
     main {
@@ -243,6 +247,128 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
+    /* ══════════════════════════════════════════════
+       УЛУЧШЕНИЕ №1: Анимированный градиент фона
+       Круги body::before и body::after циклически
+       меняют цвет между var(--accent) и var(--accent2).
+       Период — 8 секунд, плавность — ease-in-out.
+       ══════════════════════════════════════════════ */
+    @keyframes gradientShiftA {
+      0%   { background-color: var(--accent); }
+      50%  { background-color: var(--accent2); }
+      100% { background-color: var(--accent); }
+    }
+    @keyframes gradientShiftB {
+      /* Начинается с противофазы относительно gradientShiftA,
+         чтобы круги "переливались" друг в друга */
+      0%   { background-color: var(--accent2); }
+      50%  { background-color: var(--accent); }
+      100% { background-color: var(--accent2); }
+    }
+
+    /* ══════════════════════════════════════════════
+       УЛУЧШЕНИЕ №2: 3D tilt-эффект на карточках
+       Добавляем CSS-переменные для углов наклона,
+       которые будут обновляться через JS.
+       transform совмещает наклон и существующий
+       translateY(-2px) при hover.
+       ══════════════════════════════════════════════ */
+    .card {
+      /* Углы наклона по умолчанию — без наклона */
+      --rotX: 0deg;
+      --rotY: 0deg;
+      transform-style: preserve-3d;
+      will-change: transform;
+    }
+    .card:hover {
+      /* Переопределяем transform из базового hover-правила:
+         совмещаем подъём вверх и 3D-наклон по осям X/Y */
+      transform: translateY(-2px) rotateX(var(--rotX)) rotateY(var(--rotY));
+    }
+
+    /* ══════════════════════════════════════════════
+       УЛУЧШЕНИЕ №3: Иконка копирования email + toast
+       ══════════════════════════════════════════════ */
+    .copy-email-btn {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: .85rem;
+      background: transparent;
+      transition: background .2s, color .2s, transform .15s;
+      position: relative;
+      z-index: 3; /* выше подсветки и декоративного слоя карточки */
+    }
+    .copy-email-btn:hover {
+      background: var(--border);
+      color: var(--accent);
+    }
+    .copy-email-btn:active {
+      transform: scale(0.9);
+    }
+
+    /* Toast-уведомление о копировании email */
+    #email-toast {
+      position: fixed;
+      right: 20px;
+      bottom: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-family: var(--font-body);
+      font-size: .85rem;
+      font-weight: 400;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.4), 0 0 0 1px rgba(200,245,100,.08);
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity .25s ease, transform .25s ease;
+      pointer-events: none;
+      z-index: 999;
+    }
+    #email-toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    #email-toast i {
+      color: var(--accent);
+    }
+
+    /* ══════════════════════════════════════════════
+       УЛУЧШЕНИЕ №4: Подсветка курсора внутри карточки
+       Световое пятно следует за курсором мыши.
+       ══════════════════════════════════════════════ */
+    .card-glow {
+      position: absolute;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,245,100,0.25), rgba(255,255,255,0.06) 40%, transparent 70%);
+      pointer-events: none; /* не мешает кликам по карточке */
+      opacity: 0;
+      transform: translate(-50%, -50%);
+      transition: opacity .2s ease;
+      z-index: 0; /* ниже иконки, текста и стрелки, но выше фона карточки */
+      will-change: transform, opacity;
+    }
+    .card-glow.visible {
+      opacity: 1;
+    }
+    /* Поднимаем содержимое карточки над пятном подсветки */
+    .card-icon, .card-info, .card-arrow, .copy-email-btn {
+      position: relative;
+      z-index: 2;
+    }
+
     @media (max-width: 420px) {
       body { padding-top: 36px; }
       .card { padding: 14px 16px; gap: 13px; }
@@ -353,6 +479,7 @@
           <div class="card-title">Рабочая почта</div>
           <div class="card-desc">Caramelcake@choco.la</div>
         </div>
+        <button class="copy-email-btn" type="button" aria-label="Скопировать email"><i class="fas fa-copy"></i></button>
         <i class="fas fa-arrow-right card-arrow"></i>
       </a>
 
@@ -362,6 +489,7 @@
           <div class="card-title">Рабочая почта (Запасная)</div>
           <div class="card-desc">psihopoplovok@yandex.com</div>
         </div>
+        <button class="copy-email-btn" type="button" aria-label="Скопировать email"><i class="fas fa-copy"></i></button>
         <i class="fas fa-arrow-right card-arrow"></i>
       </a>
       
@@ -371,6 +499,7 @@
           <div class="card-title">Личная почта</div>
           <div class="card-desc">Celestia@neko2.net</div>
         </div>
+        <button class="copy-email-btn" type="button" aria-label="Скопировать email"><i class="fas fa-copy"></i></button>
         <i class="fas fa-arrow-right card-arrow"></i>
       </a>
 
@@ -381,5 +510,134 @@
   <footer>
     Сделано с <span>❤️</span> &nbsp;·&nbsp; Psychopoplovok © 2025
   </footer>
+
+  <!-- Toast-уведомление для копирования email (улучшение №3) -->
+  <div id="email-toast"><i class="fas fa-check-circle"></i><span>Email скопирован!</span></div>
+
+  <script>
+    // ════════════════════════════════════════════════════════════════
+    // Определяем, тач-устройство это или нет.
+    // На тач-устройствах tilt и подсветку курсора отключаем,
+    // чтобы не ломать скролл и не создавать "застрявший" hover.
+    // ════════════════════════════════════════════════════════════════
+    const isTouchDevice = ('ontouchstart' in window) || window.matchMedia('(pointer: coarse)').matches;
+
+    const cards = document.querySelectorAll('.card');
+
+    cards.forEach((card) => {
+      // ──────────────────────────────────────────────────────────
+      // УЛУЧШЕНИЕ №4: создаём элемент-пятно подсветки внутри карточки.
+      // Он один на карточку, изначально скрыт (opacity: 0 через класс).
+      // ──────────────────────────────────────────────────────────
+      const glow = document.createElement('div');
+      glow.className = 'card-glow';
+      card.appendChild(glow);
+
+      if (isTouchDevice) {
+        // На тач-устройствах не навешиваем mousemove-логику —
+        // просто выходим из обработки этой карточки дальше.
+        return;
+      }
+
+      // ──────────────────────────────────────────────────────────
+      // УЛУЧШЕНИЕ №2 + №4: единый обработчик mousemove,
+      // который одновременно считает tilt-наклон и двигает пятно света.
+      // ──────────────────────────────────────────────────────────
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left; // координата курсора внутри карточки по X
+        const y = e.clientY - rect.top;  // координата курсора внутри карточки по Y
+
+        // --- Tilt-эффект (3D-наклон) ---
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const offsetX = (x - centerX) / centerX; // от -1 до 1
+        const offsetY = (y - centerY) / centerY; // от -1 до 1
+
+        const maxTilt = 5; // максимальный угол наклона в градусах
+        const rotY = (offsetX * maxTilt).toFixed(2);   // наклон вокруг Y зависит от X
+        const rotX = (-offsetY * maxTilt).toFixed(2);  // наклон вокруг X зависит от Y (инвертируем для естественности)
+
+        card.style.setProperty('--rotX', rotX + 'deg');
+        card.style.setProperty('--rotY', rotY + 'deg');
+
+        // --- Подсветка курсора (световое пятно) ---
+        glow.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+      });
+
+      // При входе курсора — плавно показываем пятно света
+      card.addEventListener('mouseenter', () => {
+        glow.classList.add('visible');
+      });
+
+      // При уходе курсора — возвращаем карточку в исходное положение
+      // и скрываем пятно подсветки
+      card.addEventListener('mouseleave', () => {
+        card.style.setProperty('--rotX', '0deg');
+        card.style.setProperty('--rotY', '0deg');
+        glow.classList.remove('visible');
+      });
+    });
+
+    // ════════════════════════════════════════════════════════════════
+    // УЛУЧШЕНИЕ №3: копирование email по клику на иконку fa-copy
+    // ════════════════════════════════════════════════════════════════
+    const toast = document.getElementById('email-toast');
+    let toastTimer = null;
+
+    function showEmailToast() {
+      toast.classList.add('show');
+      // Если предыдущий таймер ещё не сработал — сбрасываем его,
+      // чтобы повторные клики корректно продлевали показ toast'а
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2000);
+    }
+
+    document.querySelectorAll('.copy-email-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        // Останавливаем всплытие, чтобы клик по иконке
+        // не вызывал переход по ссылке родительской карточки (mailto:)
+        e.stopPropagation();
+        e.preventDefault();
+
+        // Находим email в соседнем блоке .card-desc внутри этой же карточки
+        const card = btn.closest('.card');
+        const emailText = card.querySelector('.card-desc').textContent.trim();
+
+        // Копируем текст в буфер обмена
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(emailText)
+            .then(showEmailToast)
+            .catch(() => {
+              // Запасной вариант, если Clipboard API недоступен (например, не-HTTPS контекст)
+              fallbackCopyText(emailText);
+              showEmailToast();
+            });
+        } else {
+          fallbackCopyText(emailText);
+          showEmailToast();
+        }
+      });
+    });
+
+    // Запасной способ копирования через временный textarea
+    // (для старых браузеров или контекстов без navigator.clipboard)
+    function fallbackCopyText(text) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+      } catch (err) {
+        console.error('Не удалось скопировать email:', err);
+      }
+      document.body.removeChild(textarea);
+    }
+  </script>
 </body>
 </html>
