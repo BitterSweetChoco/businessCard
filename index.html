@@ -274,15 +274,14 @@
        translateY(-2px) при hover.
        ══════════════════════════════════════════════ */
     .card {
-      /* Углы наклона по умолчанию — без наклона */
+      
       --rotX: 0deg;
       --rotY: 0deg;
       transform-style: preserve-3d;
       will-change: transform;
     }
     .card:hover {
-      /* Переопределяем transform из базового hover-правила:
-         совмещаем подъём вверх и 3D-наклон по осям X/Y */
+      
       transform: translateY(-2px) rotateX(var(--rotX)) rotateY(var(--rotY));
     }
 
@@ -348,18 +347,20 @@
        Световое пятно следует за курсором мыши.
        ══════════════════════════════════════════════ */
     .card-glow {
-      position: absolute;
-      width: 150px;
-      height: 150px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(200,245,100,0.25), rgba(255,255,255,0.06) 40%, transparent 70%);
-      pointer-events: none; /* не мешает кликам по карточке */
-      opacity: 0;
-      transform: translate(-50%, -50%);
-      transition: opacity .2s ease;
-      z-index: 0; /* ниже иконки, текста и стрелки, но выше фона карточки */
-      will-change: transform, opacity;
-    }
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(200,245,100,0.25), rgba(255,255,255,0.06) 40%, transparent 70%);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  transition: opacity .2s ease, transform 0.1s ease; /* добавили transition для transform */
+  z-index: 0;
+  will-change: transform, opacity;
+}
     .card-glow.visible {
       opacity: 1;
     }
@@ -554,7 +555,7 @@
         const offsetX = (x - centerX) / centerX; // от -1 до 1
         const offsetY = (y - centerY) / centerY; // от -1 до 1
 
-        const maxTilt = 5; // максимальный угол наклона в градусах
+        const maxTilt = 3; // уменьшено для минимизации смещения подсветки
         const rotY = (offsetX * maxTilt).toFixed(2);   // наклон вокруг Y зависит от X
         const rotX = (-offsetY * maxTilt).toFixed(2);  // наклон вокруг X зависит от Y (инвертируем для естественности)
 
